@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -22,26 +23,12 @@
 }
 
 @media (max-width: 768px) {
-  .cart-inner {
-    flex-direction: column;
-    align-items: stretch !important;
-  }
-  .cart-total {
-    text-align: left !important;
-    margin-top: 8px;
-  }
-  .btn-wa, .btn-clear {
-    width: 100%;
-  }
-  .admin-panel {
-    width: 100% !important;
-  }
-  .bcard-actions {
-    flex-direction: column;
-  }
-  .btn-wa-sm {
-    justify-content: center;
-  }
+  .cart-inner { flex-direction: column; align-items: stretch !important; }
+  .cart-total { text-align: left !important; margin-top: 8px; }
+  .btn-wa, .btn-clear { width: 100%; }
+  .admin-panel { width: 100% !important; }
+  .bcard-actions { flex-direction: column; }
+  .btn-wa-sm { justify-content: center; }
 }
 
 body{background:linear-gradient(135deg, #0a0a0f 0%, #1a0a1a 100%);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
@@ -91,7 +78,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;
 .ticket.selected{border-color:var(--blue);color:#fff;background:var(--blue);transform:scale(1.05)}
 .ticket.reserved{border-color:var(--yellow);color:var(--yellow);background:var(--yellowDim);cursor:not-allowed;opacity:0.8}
 .ticket.sold{border-color:var(--red);color:var(--red);background:var(--redDim);cursor:not-allowed;opacity:0.8}
-.ticket.winner{animation:winnerPulse 0.5s ease-in-out 3; border-color:var(--orange); background:var(--orange); color:#fff; box-shadow:0 0 20px var(--orange);}
+.ticket.winner{animation:winnerPulse 0.5s ease-in-out 3;border-color:var(--orange);background:var(--orange);color:#fff;box-shadow:0 0 20px var(--orange);}
 @keyframes winnerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
 
 .cart{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;z-index:100;background:linear-gradient(180deg,transparent,var(--bg) 25%)}
@@ -263,7 +250,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;
       </div>
       <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
     </div>
-    <div class="recent hidden" id="recentWrap" style="display:none">
+    <div class="recent" id="recentWrap" style="display:none">
       <span class="recent-lbl">🔥 Últimos vendidos:</span>
       <div class="recent-nums" id="recentNums"></div>
     </div>
@@ -282,7 +269,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;
   <div class="secret-footer" id="secretFooter">💝 RIFA DIA DOS NAMORADOS 2026 💝</div>
 </div>
 
-<div class="cart">
+<div class="cart hidden" id="cart">
   <div class="cart-inner">
     <div class="cart-nums">
       <div class="cart-label">💕 Selecionados <span id="cartCount" style="color:var(--pink);font-weight:700"></span></div>
@@ -351,7 +338,7 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;
           <div class="draw-number" id="drawNumber">---</div>
           <div class="draw-info" id="drawInfo">Aguardando sorteio 2026</div>
         </div>
-        <button class="btn-draw" id="btnDraw" onclick="window.RIFA.realizarSorteio()">🎲 REALIZAR SORTEIO 2026</button>
+        <button class="btn-draw" id="btnDraw">🎲 REALIZAR SORTEIO 2026</button>
       </div>
       <div class="section-title" style="margin-top:20px">📜 Histórico de Sorteios 2026</div>
       <div id="drawHistory" class="draw-history"><div class="empty">Nenhum sorteio realizado ainda em 2026</div></div>
@@ -383,290 +370,652 @@ h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;
 <div class="toast" id="toast"></div>
 
 <script>
-(function(){
-  var TOTAL=100, PRICE=15, WA='558898540618';
-  var KEY='rifa_namorados_2026_v2', PASS='071022';
-  var data={}, selected=[], adminOk=false;
-  var drawHistory = [];
-  var clickCount = 0;
-  var clickTimer = null;
+// ============================================================
+// CONFIGURAÇÃO - Atualize com suas credenciais do Supabase
+// ============================================================
+const SUPABASE_URL = "https://edbjlcivqwmjfcxoaueu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_7efLC1jmpiGVN37WOQvWkg_Qq9UU4aQ";
 
-  function loadDrawHistory(){
-    try{
-      var h = localStorage.getItem(KEY+'_draws');
-      if(h) drawHistory = JSON.parse(h);
-    }catch(e){}
-  }
-  function saveDrawHistory(){
-    localStorage.setItem(KEY+'_draws', JSON.stringify(drawHistory));
-  }
-  function showLoading(){ document.getElementById('loading').classList.add('show'); }
-  function hideLoading(){ document.getElementById('loading').classList.remove('show'); }
-  function loadData(){
-    try{
-      var s=localStorage.getItem(KEY);
-      if(s){ data=JSON.parse(s); return; }
-    }catch(e){}
-    data={};
-    for(var i=1;i<=TOTAL;i++) data[i]={st:'available',name:'',phone:'',ts:0,winner:false};
-    save();
-  }
-  function save(){
-    try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}
-  }
-  function toast(msg,type){
-    var el=document.getElementById('toast');
-    el.textContent=msg;
-    el.className='toast '+type+' show';
-    setTimeout(function(){el.className='toast';},2800);
-  }
-  function isAvailable(n){ return data[n] && data[n].st === 'available'; }
+const TOTAL = 100;
+const PRICE = 15;
+const WA = '558898540618';
+const PASS = '071022';
 
-  function checkAdminAccess() {
-    clickCount++;
-    clearTimeout(clickTimer);
-    if(clickCount >= 3) { clickCount = 0; showLogin(); }
-    else { clickTimer = setTimeout(function(){ clickCount = 0; }, 800); }
-  }
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+const { createClient } = window.supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  window.RIFA = window.RIFA || {};
-  window.RIFA.realizarSorteio = function(){
-    if(!adminOk){ toast('Acesso negado! Apenas administradores podem realizar sorteios.','error'); return; }
-    var soldNumbers = [];
-    for(var i=1;i<=TOTAL;i++){ if(data[i].st === 'sold' && !data[i].winner){ soldNumbers.push(i); } }
-    if(soldNumbers.length === 0){ toast('Não há números vendidos disponíveis para sorteio!','warning'); document.getElementById('drawWarning').style.display = 'block'; return; }
-    showLoading();
-    setTimeout(function(){
-      var randomIndex = Math.floor(Math.random() * soldNumbers.length);
-      var winnerNumber = soldNumbers[randomIndex];
-      data[winnerNumber].winner = true;
-      data[winnerNumber].winnerDate = Date.now();
-      var drawRecord = { number: winnerNumber, date: new Date().toLocaleString('pt-BR'), timestamp: Date.now(), winnerName: data[winnerNumber].name, winnerPhone: data[winnerNumber].phone };
-      drawHistory.unshift(drawRecord);
-      if(drawHistory.length > 20) drawHistory.pop();
-      saveDrawHistory();
-      save();
-      document.getElementById('drawResult').style.display = 'block';
-      document.getElementById('drawNumber').textContent = pad(winnerNumber);
-      document.getElementById('drawInfo').innerHTML = '🎉 NÚMERO SORTEADO RIFA 2026! 🎉<br>Ganhador: ' + (data[winnerNumber].name || '---') + '<br>📱 ' + (data[winnerNumber].phone || '---');
-      renderGrid();
-      renderAdmin();
-      toast('🎉 NÚMERO SORTEADO 2026: ' + pad(winnerNumber) + '! Parabéns ao ganhador! 🎉', 'success');
-      if(data[winnerNumber].phone){
-        var msg = encodeURIComponent('🎉 PARABÉNS! 🎉\n\nVocê foi o GANHADOR da RIFA DIA DOS NAMORADOS 2026!\nNúmero sorteado: ' + pad(winnerNumber) + '\n\nEntre em contato conosco para resgatar seu prêmio! 🏆💝');
-        setTimeout(function(){
-          if(confirm('Deseja enviar mensagem para o ganhador no WhatsApp?')){ window.open('https://wa.me/55'+data[winnerNumber].phone.replace(/\D/g,'')+'?text='+msg,'_blank'); }
-        }, 500);
+let data = {};
+let selected = [];
+let adminOk = false;
+let drawHistory = [];
+let clickCount = 0;
+let clickTimer = null;
+
+// ============================================================
+// HELPERS
+// ============================================================
+function showLoading() { document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type || 'info') + ' show';
+  setTimeout(() => { el.className = 'toast'; }, 2800);
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function esc(s) { return (s || '').replace(/'/g, "\\'"); }
+function esc2(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function isAvailable(n) { return data[n] && data[n].st === 'available'; }
+
+// ============================================================
+// SUPABASE — CARREGAR DADOS
+// ============================================================
+async function loadFromSupabase() {
+  showLoading();
+  try {
+    const { data: rows, error } = await db
+      .from('raffle_numbers')
+      .select('*')
+      .order('number', { ascending: true });
+
+    if (error) throw error;
+
+    // Se a tabela estiver vazia, preenche com 100 números disponíveis
+    if (!rows || rows.length === 0) {
+      const initial = [];
+      for (let i = 1; i <= TOTAL; i++) {
+        initial.push({ number: i, status: 'available', name: '', phone: '', timestamp: 0, winner: false });
       }
-      hideLoading();
-    }, 1000);
-  };
-  
-  window.RIFA.action = function(n,st){
-    if(st==='available' && data[n].st==='sold'){
-      if(confirm('Estornar este número? Ele ficará disponível novamente.')){ data[n].st=st; data[n].name=''; data[n].phone=''; data[n].ts=0; data[n].winner=false; save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' liberado!','success'); }
-    } else if(st==='sold' && data[n].st==='reserved'){ data[n].st=st; data[n].ts=Date.now(); save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' aprovado!','success'); }
-    else if(st==='available' && data[n].st==='reserved'){ data[n].st=st; data[n].name=''; data[n].phone=''; data[n].ts=0; data[n].winner=false; save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' liberado!','success'); }
-  };
-  
-  window.RIFA.approveAll = function(name,phone){
-    var count=0;
-    for(var i=1;i<=TOTAL;i++){ if(data[i].name===name && data[i].phone===phone && data[i].st==='reserved'){ data[i].st='sold'; data[i].ts=Date.now(); count++; } }
-    if(count>0){ save(); renderGrid(); renderAdmin(); toast('✓ '+count+' números de '+name+' aprovados!','success'); }
-  };
+      const { error: insertErr } = await db.from('raffle_numbers').insert(initial);
+      if (insertErr) throw insertErr;
 
-  function showLogin(){
-    document.getElementById('passInput').value='';
-    document.getElementById('loginErr').textContent='';
-    document.getElementById('loginOverlay').classList.remove('hidden');
-    setTimeout(function(){ document.getElementById('passInput').focus(); },100);
+      // Recarrega após inserir
+      const { data: freshRows, error: fetchErr } = await db
+        .from('raffle_numbers').select('*').order('number', { ascending: true });
+      if (fetchErr) throw fetchErr;
+      buildLocalData(freshRows);
+    } else {
+      buildLocalData(rows);
+    }
+
+    // Carrega histórico de sorteios
+    const { data: draws } = await db
+      .from('draw_history').select('*').order('timestamp', { ascending: false });
+    if (draws) drawHistory = draws;
+
+    renderGrid();
+  } catch (err) {
+    const msg = err?.message || err?.error_description || JSON.stringify(err);
+    console.error('Erro Supabase detalhado:', msg, err);
+    toast('Erro: ' + msg, 'error');
+    loadLocalFallback();
+  } finally {
+    hideLoading();
   }
-  function hideLogin(){ document.getElementById('loginOverlay').classList.add('hidden'); }
-  function doLogin(){
-    var v=document.getElementById('passInput').value;
-    if(v===PASS){ adminOk=true; hideLogin(); openAdmin(); toast('Login realizado com sucesso!','success'); }
-    else { document.getElementById('loginErr').textContent='❌ Senha incorreta. Tente novamente.'; document.getElementById('passInput').value=''; document.getElementById('passInput').focus(); }
+}
+
+function buildLocalData(rows) {
+  data = {};
+  rows.forEach(r => {
+    data[r.number] = {
+      st: r.status,
+      name: r.name || '',
+      phone: r.phone || '',
+      ts: r.timestamp || 0,
+      winner: r.winner || false
+    };
+  });
+}
+
+// ============================================================
+// SUPABASE — SALVAR UM NÚMERO
+// ============================================================
+async function saveNumber(n, updates) {
+  try {
+    const { error } = await db.from('raffle_numbers').update(updates).eq('number', n);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Erro ao salvar #' + n, err);
+    toast('Erro ao salvar no servidor', 'error');
+    return false;
+  }
+}
+
+// ============================================================
+// SUPABASE — SALVAR VÁRIOS NÚMEROS DE UMA VEZ
+// ============================================================
+async function saveNumbers(list) {
+  // list = [{ number, updates }, ...]
+  showLoading();
+  try {
+    const promises = list.map(item =>
+      db.from('raffle_numbers').update(item.updates).eq('number', item.number)
+    );
+    const results = await Promise.all(promises);
+    const failed = results.find(r => r.error);
+    if (failed) throw failed.error;
+    return true;
+  } catch (err) {
+    console.error('Erro batch save:', err);
+    toast('Erro ao salvar dados no servidor', 'error');
+    return false;
+  } finally {
+    hideLoading();
+  }
+}
+
+// ============================================================
+// FALLBACK LOCAL (quando Supabase falha)
+// ============================================================
+const LS_KEY = 'rifa_namorados_2026_v2';
+
+function loadLocalFallback() {
+  try {
+    const s = localStorage.getItem(LS_KEY);
+    data = s ? JSON.parse(s) : {};
+  } catch(e) { data = {}; }
+
+  if (!Object.keys(data).length) {
+    for (let i = 1; i <= TOTAL; i++) {
+      data[i] = { st: 'available', name: '', phone: '', ts: 0, winner: false };
+    }
+  }
+  renderGrid();
+}
+
+function saveLocal() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+// ============================================================
+// AÇÕES ADMIN
+// ============================================================
+window.RIFA = {};
+
+window.RIFA.action = async function(n, st) {
+  const cur = data[n].st;
+
+  // Aprovar reserva → vendido
+  if (st === 'sold' && cur === 'reserved') {
+    data[n].st = 'sold';
+    data[n].ts = Date.now();
+    const ok = await saveNumber(n, { status: 'sold', timestamp: data[n].ts });
+    if (ok) { saveLocal(); renderGrid(); renderAdmin(); toast('✓ Número #' + pad(n) + ' aprovado!', 'success'); }
+    return;
   }
 
-  document.getElementById('secretFooter').addEventListener('click', checkAdminAccess);
-  document.getElementById('btnLogin').addEventListener('click',doLogin);
-  document.getElementById('passInput').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
-  document.getElementById('btnLoginCancel').addEventListener('click',hideLogin);
-  document.getElementById('loginOverlay').addEventListener('click',function(e){ if(e.target===this) hideLogin(); });
-
-  function openAdmin(){ if(!adminOk){ showLogin(); return; } renderAdmin(); renderDrawTab(); document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('sideOverlay').classList.remove('hidden'); }
-  function closeAdmin(){ document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('sideOverlay').classList.add('hidden'); }
-  function renderDrawTab(){
-    var soldCount = 0;
-    for(var i=1;i<=TOTAL;i++){ if(data[i].st === 'sold') soldCount++; }
-    document.getElementById('drawWarning').style.display = soldCount === 0 ? 'block' : 'none';
-    var historyDiv = document.getElementById('drawHistory');
-    if(drawHistory.length === 0){ historyDiv.innerHTML = '<div class="empty">Nenhum sorteio realizado ainda em 2026</div>'; }
-    else { historyDiv.innerHTML = drawHistory.map(function(d){ return '<div class="history-item"><div><span class="history-number">#' + pad(d.number) + '</span><div class="history-date">' + d.date + '</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--pink)">' + (d.winnerName || '---') + '</div><div style="font-size:10px;color:var(--textMuted)">🏆 GANHADOR 2026</div></div></div>'; }).join(''); }
+  // Liberar reservado ou vendido
+  if (st === 'available' && (cur === 'reserved' || cur === 'sold')) {
+    const label = cur === 'sold' ? 'Estornar este número?' : 'Liberar esta reserva?';
+    if (!confirm(label + ' Ele ficará disponível novamente.')) return;
+    data[n] = { st: 'available', name: '', phone: '', ts: 0, winner: false };
+    const ok = await saveNumber(n, { status: 'available', name: '', phone: '', timestamp: 0, winner: false });
+    if (ok) { saveLocal(); renderGrid(); renderAdmin(); toast('✓ Número #' + pad(n) + ' liberado!', 'success'); }
   }
-  
-  document.getElementById('btnClosePanel').addEventListener('click',closeAdmin);
-  document.getElementById('sideOverlay').addEventListener('click',closeAdmin);
-  document.getElementById('btnLogout').addEventListener('click',function(){ adminOk=false; closeAdmin(); toast('Sessão encerrada','info'); });
-  document.querySelectorAll('.admin-tab').forEach(function(tab){
-    tab.addEventListener('click',function(){
-      var t=this.dataset.tab;
-      document.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active');});
-      document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.remove('active');});
-      this.classList.add('active');
-      document.getElementById('tab-'+t).classList.add('active');
-      if(t === 'draw') renderDrawTab();
-    });
+};
+
+window.RIFA.approveAll = async function(name, phone) {
+  const list = [];
+  const ts = Date.now();
+  for (let i = 1; i <= TOTAL; i++) {
+    if (data[i].name === name && data[i].phone === phone && data[i].st === 'reserved') {
+      data[i].st = 'sold';
+      data[i].ts = ts;
+      list.push({ number: i, updates: { status: 'sold', timestamp: ts } });
+    }
+  }
+  if (!list.length) return;
+  const ok = await saveNumbers(list);
+  if (ok) { saveLocal(); renderGrid(); renderAdmin(); toast('✓ ' + list.length + ' número(s) de ' + name + ' aprovados!', 'success'); }
+};
+
+window.RIFA.realizarSorteio = async function() {
+  if (!adminOk) { toast('Acesso negado!', 'error'); return; }
+
+  const eligible = [];
+  for (let i = 1; i <= TOTAL; i++) {
+    if (data[i].st === 'sold' && !data[i].winner) eligible.push(i);
+  }
+
+  if (!eligible.length) {
+    toast('Não há números vendidos disponíveis para sorteio!', 'warning');
+    document.getElementById('drawWarning').style.display = 'block';
+    return;
+  }
+
+  showLoading();
+
+  setTimeout(async () => {
+    const winner = eligible[Math.floor(Math.random() * eligible.length)];
+    data[winner].winner = true;
+
+    await saveNumber(winner, { winner: true });
+
+    const record = {
+      number: winner,
+      date: new Date().toLocaleString('pt-BR'),
+      timestamp: Date.now(),
+      winnerName: data[winner].name || '',
+      winnerPhone: data[winner].phone || ''
+    };
+    drawHistory.unshift(record);
+    await db.from('draw_history').insert([{
+      timestamp: record.timestamp,
+      number: record.number,
+      date: record.date,
+      winnerName: record.winnerName,
+      winnerPhone: record.winnerPhone
+    }]);
+
+    saveLocal();
+    renderGrid();
+    renderAdmin();
+
+    document.getElementById('drawResult').style.display = 'block';
+    document.getElementById('drawNumber').textContent = pad(winner);
+    document.getElementById('drawInfo').innerHTML =
+      '🎉 NÚMERO SORTEADO! 🎉<br>Ganhador: ' + esc2(data[winner].name || '---') +
+      '<br>📱 ' + esc2(data[winner].phone || '---');
+
+    renderDrawTab();
+    toast('🎉 SORTEADO: #' + pad(winner) + '! Parabéns!', 'success');
+    hideLoading();
+
+    if (data[winner].phone) {
+      const msg = encodeURIComponent('🎉 PARABÉNS! Você foi o GANHADOR da RIFA DIA DOS NAMORADOS 2026!\nNúmero sorteado: ' + pad(winner) + '\n\nEntre em contato para resgatar seu prêmio! 🏆💝');
+      setTimeout(() => {
+        if (confirm('Enviar mensagem para o ganhador no WhatsApp?')) {
+          window.open('https://wa.me/55' + data[winner].phone.replace(/\D/g, '') + '?text=' + msg, '_blank');
+        }
+      }, 500);
+    }
+  }, 1000);
+};
+
+// ============================================================
+// UI — GRID
+// ============================================================
+function toggleNum(n) {
+  if (!isAvailable(n)) {
+    if (data[n].st === 'reserved') toast('Número #' + pad(n) + ' já está reservado!', 'error');
+    else if (data[n].st === 'sold') toast('Número #' + pad(n) + ' já foi vendido!', 'error');
+    return;
+  }
+  const idx = selected.indexOf(n);
+  if (idx === -1) {
+    if (selected.length >= 20) { toast('Limite máximo de 20 números por vez', 'error'); return; }
+    selected.push(n);
+    toast('✓ Número ' + pad(n) + ' adicionado!', 'success');
+  } else {
+    selected.splice(idx, 1);
+  }
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const st = data[i] ? data[i].st : 'available';
+    const isSel = selected.indexOf(i) !== -1;
+    const isWinner = data[i] && data[i].winner;
+    const div = document.createElement('div');
+    div.className = 'ticket ' + (isSel ? 'selected' : st) + (isWinner ? ' winner' : '');
+    div.textContent = pad(i);
+    if (st === 'available' || isSel) {
+      div.addEventListener('click', (function(n){ return function(){ toggleNum(n); }; })(i));
+    }
+    grid.appendChild(div);
+  }
+  updateStats();
+  updateCart();
+}
+
+// ============================================================
+// UI — STATS
+// ============================================================
+function updateStats() {
+  let avail = 0, res = 0, sold = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    const st = data[i] ? data[i].st : 'available';
+    if (st === 'available') avail++;
+    else if (st === 'reserved') res++;
+    else sold++;
+  }
+  document.getElementById('sAvail').textContent = avail;
+  document.getElementById('sRes').textContent = res;
+  document.getElementById('sSold').textContent = sold;
+
+  const pct = Math.round(sold / TOTAL * 100);
+  document.getElementById('pPct').textContent = pct + '%';
+  document.getElementById('pFill').style.width = pct + '%';
+
+  const recent = [];
+  for (let i = 1; i <= TOTAL; i++) {
+    if (data[i] && data[i].st === 'sold') recent.push({ n: i, ts: data[i].ts || 0 });
+  }
+  recent.sort((a, b) => b.ts - a.ts);
+  const top6 = recent.slice(0, 6);
+  const wrap = document.getElementById('recentWrap');
+  if (top6.length) {
+    wrap.style.display = 'flex';
+    document.getElementById('recentNums').innerHTML = top6.map(x => '<span class="recent-tag">#' + pad(x.n) + '</span>').join('');
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+// ============================================================
+// UI — CARRINHO
+// ============================================================
+function updateCart() {
+  const cartEl = document.getElementById('cart');
+  const tags = document.getElementById('cartTags');
+  const totalEl = document.getElementById('cartTotal');
+  const countEl = document.getElementById('cartCount');
+  const btn = document.getElementById('btnWa');
+
+  if (!selected.length) {
+    cartEl.classList.add('hidden');
+    tags.innerHTML = '<span class="cart-empty">✨ Clique nos números verdes ✨</span>';
+    totalEl.textContent = 'R$0';
+    countEl.textContent = '';
+    btn.disabled = true;
+    return;
+  }
+
+  cartEl.classList.remove('hidden');
+  const sorted = selected.slice().sort((a, b) => a - b);
+  tags.innerHTML = sorted.map(n => '<span class="cart-tag" data-n="' + n + '">' + pad(n) + ' ✕</span>').join('');
+  tags.querySelectorAll('.cart-tag').forEach(el => {
+    el.addEventListener('click', () => toggleNum(parseInt(el.dataset.n)));
   });
 
-  function getBuyers(){
-    var map={};
-    for(var i=1;i<=TOTAL;i++){ var d=data[i]; if(d.st==='available') continue; if(!d.name&&!d.phone) continue; var k=d.name+'||'+d.phone; if(!map[k]) map[k]={name:d.name,phone:d.phone,nums:[]}; map[k].nums.push({n:i,st:d.st,winner:d.winner}); }
-    return Object.values(map);
-  }
-  function waIcon(){ return '<svg style="width:12px;height:12px;fill:#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'; }
+  const total = selected.length * PRICE;
+  totalEl.textContent = 'R$' + total.toLocaleString('pt-BR') + ',00';
+  countEl.textContent = '(' + selected.length + ')';
+  btn.disabled = false;
+}
 
-  function renderAdmin(){
-    var buyers=getBuyers();
-    var reserved=[], sold=[];
-    for(var i=1;i<=TOTAL;i++){ if(data[i].st==='reserved') reserved.push(i); if(data[i].st==='sold') sold.push(i); }
-    document.getElementById('cntBuyers').textContent=buyers.length;
-    document.getElementById('cntReserved').textContent=reserved.length;
-    document.getElementById('cntSold').textContent=sold.length;
-    var bDiv=document.getElementById('listBuyers');
-    if(!buyers.length){ bDiv.innerHTML='<div class="empty">Nenhum comprador ainda</div>'; }
-    else {
-      bDiv.innerHTML=buyers.map(function(b){
-        var total=b.nums.length*PRICE;
-        var resNums=b.nums.filter(function(x){return x.st==='reserved';});
-        var numsHtml=b.nums.map(function(x){ return '<span class="bnum '+ (x.winner ? 'winner' : x.st) +'">'+pad(x.n)+ (x.winner ? ' 🏆' : '') +'</span>'; }).join('');
-        var msg=encodeURIComponent('Olá '+b.name+'! Confirmando minha reserva na RIFA DIA DOS NAMORADOS 2026 💝\n\nNúmeros: '+b.nums.map(function(x){return pad(x.n);}).join(', ')+'\nTotal: R$'+total+',00\n\nAguardo confirmação do pagamento para 2026!');
-        var approveBtn=resNums.length>0?('<button class="abtn green" onclick="window.RIFA.approveAll(\''+esc(b.name)+'\',\''+esc(b.phone)+'\')">✓ Aprovar todos ('+resNums.length+')</button>'):'';
-        return '<div class="bcard"><div class="bcard-name">👤 '+esc2(b.name||'—')+'</div><div class="bcard-phone">📱 '+esc2(b.phone||'—')+'</div><div class="bcard-nums">'+numsHtml+'</div><div class="bcard-total">'+b.nums.length+' número(s) · <b>R$'+total.toLocaleString('pt-BR')+',00</b></div><div class="bcard-actions"><button class="btn-wa-sm" onclick="window.open(\'https://wa.me/55'+b.phone.replace(/\D/g,'')+'?text='+msg+'\',\'_blank\')">'+waIcon()+' WhatsApp</button>'+approveBtn+'</div></div>';
-      }).join('');
-    }
-    var rDiv=document.getElementById('listReserved');
-    if(!reserved.length){ rDiv.innerHTML='<div class="empty">Nenhum número reservado</div>'; }
-    else { rDiv.innerHTML=reserved.map(function(n){ var d=data[n]; return '<div class="acard"><div class="acard-num" style="color:var(--yellow)">#'+pad(n)+' 🟡</div><div class="acard-info"><b>'+esc2(d.name||'—')+'</b><br>📱 '+esc2(d.phone||'—')+'</div><div class="acard-actions"><button class="abtn green" onclick="window.RIFA.action('+n+',\'sold\')">✓ Aprovar</button><button class="abtn yellow" onclick="window.RIFA.action('+n+',\'available\')">↩ Liberar</button></div></div>'; }).join(''); }
-    var sDiv=document.getElementById('listSold');
-    if(!sold.length){ sDiv.innerHTML='<div class="empty">Nenhum número vendido</div>'; }
-    else { sDiv.innerHTML=sold.map(function(n){ var d=data[n]; var winnerBadge = d.winner ? '<span style="color:var(--orange);margin-left:8px">🏆 GANHADOR 2026</span>' : ''; return '<div class="acard"><div class="acard-num" style="color:var(--green)">#'+pad(n)+' ✓'+winnerBadge+'</div><div class="acard-info"><b>'+esc2(d.name||'—')+'</b><br>📱 '+esc2(d.phone||'—')+'</div><div class="acard-actions"><button class="abtn red" onclick="window.RIFA.action('+n+',\'available\')">↩ Estornar</button></div></div>'; }).join(''); }
-  }
+// ============================================================
+// UI — MODAL DE CONFIRMAÇÃO
+// ============================================================
+function openModal() {
+  if (!selected.length) return;
+  const sorted = selected.slice().sort((a, b) => a - b);
+  const total = selected.length * PRICE;
+  document.getElementById('mNums').innerHTML = sorted.map(n => '<span class="cart-tag">#' + pad(n) + '</span>').join('');
+  document.getElementById('mTotal').textContent = 'R$' + total.toLocaleString('pt-BR') + ',00';
+  document.getElementById('mSub').textContent = selected.length + ' número' + (selected.length > 1 ? 's' : '') + ' × R$' + PRICE + ',00';
+  document.getElementById('mName').value = '';
+  document.getElementById('mPhone').value = '';
+  document.getElementById('confirmOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('mName').focus(), 100);
+}
 
-  function pad(n){ return n<10?'0'+n:''+n; }
-  function esc(s){ return (s||'').replace(/'/g,"\\'"); }
-  function esc2(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function closeModal() {
+  document.getElementById('confirmOverlay').classList.add('hidden');
+}
 
-  function renderGrid(){
-    var grid=document.getElementById('grid');
-    grid.innerHTML='';
-    for(var i=1;i<=TOTAL;i++){
-      (function(n){
-        var st=data[n].st;
-        var isSel=selected.indexOf(n)!==-1;
-        var isWinner = data[n].winner;
-        var div=document.createElement('div');
-        div.className='ticket '+(isSel?'selected':st) + (isWinner ? ' winner' : '');
-        div.textContent=pad(n);
-        if(st==='available' || isSel){ div.addEventListener('click',function(){toggleNum(n);}); }
-        grid.appendChild(div);
-      })(i);
-    }
-    updateStats();
-    updateCart();
+async function doConfirm() {
+  const name = document.getElementById('mName').value.trim();
+  const phone = document.getElementById('mPhone').value.trim();
+  if (!name) { toast('❌ Informe seu nome completo', 'error'); return; }
+  if (!phone) { toast('❌ Informe seu WhatsApp', 'error'); return; }
+
+  // Verifica disponibilidade atual
+  const unavailable = selected.filter(n => !isAvailable(n));
+  if (unavailable.length) {
+    toast('⚠️ Números ' + unavailable.map(pad).join(', ') + ' não estão mais disponíveis!', 'error');
+    selected = selected.filter(n => isAvailable(n));
+    if (!selected.length) { closeModal(); renderGrid(); return; }
+    const sorted2 = selected.slice().sort((a, b) => a - b);
+    document.getElementById('mNums').innerHTML = sorted2.map(n => '<span class="cart-tag">#' + pad(n) + '</span>').join('');
+    document.getElementById('mTotal').textContent = 'R$' + (selected.length * PRICE).toLocaleString('pt-BR') + ',00';
+    document.getElementById('mSub').textContent = selected.length + ' número' + (selected.length > 1 ? 's' : '') + ' × R$' + PRICE + ',00';
+    return;
   }
 
-  function toggleNum(n){
-    if(!isAvailable(n)) { if(data[n].st==='reserved') toast('Número #'+pad(n)+' já está reservado!','error'); else if(data[n].st==='sold') toast('Número #'+pad(n)+' já foi vendido!','error'); return; }
-    var idx=selected.indexOf(n);
-    if(idx===-1){ if(selected.length<20){ selected.push(n); toast('✓ Número '+pad(n)+' adicionado!','success'); } else { toast('Limite máximo de 20 números por vez','error'); return; } }
-    else { selected.splice(idx,1); }
-    renderGrid();
-  }
+  const sorted = selected.slice().sort((a, b) => a - b);
+  const total = selected.length * PRICE;
+  const ts = Date.now();
 
-  document.getElementById('btnClear').addEventListener('click',function(){ if(selected.length>0){ selected=[]; renderGrid(); toast('Seleção limpa!','info'); } });
+  const list = sorted.map(n => ({
+    number: n,
+    updates: { status: 'reserved', name: name, phone: phone, timestamp: ts, winner: false }
+  }));
 
-  function updateStats(){
-    var avail=0,res=0,sold=0;
-    for(var i=1;i<=TOTAL;i++){ var st=data[i].st; if(st==='available') avail++; else if(st==='reserved') res++; else sold++; }
-    document.getElementById('sAvail').textContent=avail;
-    document.getElementById('sRes').textContent=res;
-    document.getElementById('sSold').textContent=sold;
-    var pct=Math.round(sold/TOTAL*100);
-    document.getElementById('pPct').textContent=pct+'%';
-    document.getElementById('pFill').style.width=pct+'%';
-    var recent=[];
-    for(var i=1;i<=TOTAL;i++){ if(data[i].st==='sold') recent.push({n:i,ts:data[i].ts||0}); }
-    recent.sort(function(a,b){return b.ts-a.ts;});
-    recent=recent.slice(0,6);
-    if(recent.length){ document.getElementById('recentWrap').style.display='flex'; document.getElementById('recentNums').innerHTML=recent.map(function(x){ return '<span class="recent-tag">#'+pad(x.n)+'</span>'; }).join(''); }
-    else { document.getElementById('recentWrap').style.display='none'; }
-  }
+  const ok = await saveNumbers(list);
+  if (!ok) return;
 
-  function updateCart(){
-    var cartEl=document.querySelector('.cart');
-    var tags=document.getElementById('cartTags');
-    var total=document.getElementById('cartTotal');
-    var count=document.getElementById('cartCount');
-    var btn=document.getElementById('btnWa');
-    if(!selected.length){ if(cartEl) cartEl.classList.add('hidden'); tags.innerHTML='<span class="cart-empty">✨ Clique nos números verdes ✨</span>'; total.textContent='R$0'; count.textContent=''; btn.disabled=true; return; }
-    if(cartEl) cartEl.classList.remove('hidden');
-    var sorted=selected.slice().sort(function(a,b){return a-b;});
-    tags.innerHTML=sorted.map(function(n){ return '<span class="cart-tag" data-n="'+n+'">'+pad(n)+' ✕</span>'; }).join('');
-    tags.querySelectorAll('.cart-tag').forEach(function(el){ el.addEventListener('click',function(){ toggleNum(parseInt(this.dataset.n)); }); });
-    var t=selected.length*PRICE;
-    total.textContent='R$'+t.toLocaleString('pt-BR')+',00';
-    count.textContent='('+selected.length+')';
-    btn.disabled=false;
-  }
+  sorted.forEach(n => {
+    data[n] = { st: 'reserved', name, phone, ts, winner: false };
+  });
+  saveLocal();
 
-  document.getElementById('btnWa').addEventListener('click',openModal);
-  document.getElementById('btnModalCancel').addEventListener('click',closeModal);
-  document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
-  document.getElementById('btnModalConfirm').addEventListener('click',doConfirm);
+  const numsStr = sorted.map(pad).join(', ');
+  const msg = encodeURIComponent(
+    '💝 *CONFIRMAÇÃO DE RESERVA - RIFA DIA DOS NAMORADOS 2026* 💝\n\n' +
+    '👤 *Nome:* ' + name + '\n' +
+    '📱 *WhatsApp:* ' + phone + '\n' +
+    '🎯 *Números:* ' + numsStr + '\n' +
+    '💰 *Valor Total:* R$' + total.toLocaleString('pt-BR') + ',00\n' +
+    '🎫 *Quantidade:* ' + selected.length + ' número' + (selected.length > 1 ? 's' : '') + '\n\n' +
+    '✅ *Status:* Aguardando confirmação de pagamento\n\n' +
+    '🔗 *Prêmio:* Rifa Especial Dia dos Namorados 2026'
+  );
 
-  function openModal(){
-    if(!selected.length) return;
-    var sorted=selected.slice().sort(function(a,b){return a-b;});
-    var total=selected.length*PRICE;
-    document.getElementById('mNums').innerHTML=sorted.map(function(n){ return '<span class="cart-tag">#'+pad(n)+'</span>'; }).join('');
-    document.getElementById('mTotal').textContent='R$'+total.toLocaleString('pt-BR')+',00';
-    document.getElementById('mSub').textContent=selected.length+' número'+(selected.length>1?'s':'')+' × R$'+PRICE+',00';
-    document.getElementById('mName').value='';
-    document.getElementById('mPhone').value='';
-    document.getElementById('confirmOverlay').classList.remove('hidden');
-    setTimeout(function(){ document.getElementById('mName').focus(); },100);
-  }
-  function closeModal(){ document.getElementById('confirmOverlay').classList.add('hidden'); }
-  function doConfirm(){
-    var name=document.getElementById('mName').value.trim();
-    var phone=document.getElementById('mPhone').value.trim();
-    if(!name){ toast('❌ Informe seu nome completo','error'); return; }
-    if(!phone){ toast('❌ Informe seu WhatsApp','error'); return; }
-    var unavailable = [];
-    selected.forEach(function(n){ if(!isAvailable(n)) unavailable.push(n); });
-    if(unavailable.length > 0){ toast('⚠️ Números '+unavailable.map(pad).join(', ')+' não estão mais disponíveis!','error'); selected = selected.filter(function(n){ return isAvailable(n); }); if(selected.length === 0){ closeModal(); renderGrid(); return; } var stillAvailable = selected.slice().sort(function(a,b){return a-b;}); var newTotal = stillAvailable.length * PRICE; document.getElementById('mNums').innerHTML=stillAvailable.map(function(n){ return '<span class="cart-tag">#'+pad(n)+'</span>'; }).join(''); document.getElementById('mTotal').textContent='R$'+newTotal.toLocaleString('pt-BR')+',00'; document.getElementById('mSub').textContent=stillAvailable.length+' número'+(stillAvailable.length>1?'s':'')+' × R$'+PRICE+',00'; toast('⚠️ Alguns números foram removidos da seleção','info'); return; }
-    var sorted=selected.slice().sort(function(a,b){return a-b;});
-    var total=selected.length*PRICE;
-    var numsStr=sorted.map(pad).join(', ');
-    showLoading();
-    setTimeout(function(){
-      sorted.forEach(function(n){ data[n]={st:'reserved',name:name,phone:phone,ts:Date.now(),winner:false}; });
-      save();
-      var msg=encodeURIComponent('💝 *CONFIRMAÇÃO DE RESERVA - RIFA DIA DOS NAMORADOS 2026* 💝\n\n👤 *Nome:* '+name+'\n📱 *WhatsApp:* '+phone+'\n🎯 *Números:* '+numsStr+'\n💰 *Valor Total:* R$'+total.toLocaleString('pt-BR')+',00\n🎫 *Quantidade:* '+selected.length+' números\n\n✅ *Status:* Aguardando confirmação de pagamento\n\n🔗 *Prêmio:* Rifa Especial Dia dos Namorados 2026');
-      window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
-      selected=[];
-      closeModal();
-      renderGrid();
-      hideLoading();
-      toast('✓ Reserva confirmada! Finalize o pagamento pelo WhatsApp','success');
-    }, 500);
-  }
-
-  loadDrawHistory();
-  loadData();
+  window.open('https://wa.me/' + WA + '?text=' + msg, '_blank');
+  selected = [];
+  closeModal();
   renderGrid();
-})();
+  toast('✓ Reserva feita! Finalize o pagamento pelo WhatsApp', 'success');
+}
+
+// ============================================================
+// UI — PAINEL ADMIN
+// ============================================================
+function waIcon() {
+  return '<svg style="width:12px;height:12px;fill:#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>';
+}
+
+function getBuyers() {
+  const map = {};
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = data[i];
+    if (!d || d.st === 'available') continue;
+    if (!d.name && !d.phone) continue;
+    const k = d.name + '||' + d.phone;
+    if (!map[k]) map[k] = { name: d.name, phone: d.phone, nums: [] };
+    map[k].nums.push({ n: i, st: d.st, winner: d.winner });
+  }
+  return Object.values(map);
+}
+
+function renderAdmin() {
+  const buyers = getBuyers();
+  const reserved = [];
+  const sold = [];
+  for (let i = 1; i <= TOTAL; i++) {
+    if (data[i] && data[i].st === 'reserved') reserved.push(i);
+    if (data[i] && data[i].st === 'sold') sold.push(i);
+  }
+
+  document.getElementById('cntBuyers').textContent = buyers.length;
+  document.getElementById('cntReserved').textContent = reserved.length;
+  document.getElementById('cntSold').textContent = sold.length;
+
+  // Compradores
+  const bDiv = document.getElementById('listBuyers');
+  if (!buyers.length) {
+    bDiv.innerHTML = '<div class="empty">Nenhum comprador ainda</div>';
+  } else {
+    bDiv.innerHTML = buyers.map(b => {
+      const total = b.nums.length * PRICE;
+      const resNums = b.nums.filter(x => x.st === 'reserved');
+      const numsHtml = b.nums.map(x => '<span class="bnum ' + (x.winner ? 'winner' : x.st) + '">' + pad(x.n) + (x.winner ? ' 🏆' : '') + '</span>').join('');
+      const msg = encodeURIComponent('Olá ' + b.name + '! Seus números da RIFA DIA DOS NAMORADOS 2026 💝\n\nNúmeros: ' + b.nums.map(x => pad(x.n)).join(', ') + '\nTotal: R$' + total + ',00\n\nAguardo confirmação do pagamento!');
+      const approveBtn = resNums.length ? '<button class="abtn green" onclick="window.RIFA.approveAll(\'' + esc(b.name) + '\',\'' + esc(b.phone) + '\')">✓ Aprovar todos (' + resNums.length + ')</button>' : '';
+      return '<div class="bcard">' +
+        '<div class="bcard-name">👤 ' + esc2(b.name || '—') + '</div>' +
+        '<div class="bcard-phone">📱 ' + esc2(b.phone || '—') + '</div>' +
+        '<div class="bcard-nums">' + numsHtml + '</div>' +
+        '<div class="bcard-total">' + b.nums.length + ' número(s) · <b>R$' + total.toLocaleString('pt-BR') + ',00</b></div>' +
+        '<div class="bcard-actions">' +
+        '<button class="btn-wa-sm" onclick="window.open(\'https://wa.me/55' + b.phone.replace(/\D/g,'') + '?text=' + msg + '\',\'_blank\')">' + waIcon() + ' WhatsApp</button>' +
+        approveBtn + '</div></div>';
+    }).join('');
+  }
+
+  // Reservados
+  const rDiv = document.getElementById('listReserved');
+  if (!reserved.length) {
+    rDiv.innerHTML = '<div class="empty">Nenhum número reservado</div>';
+  } else {
+    rDiv.innerHTML = reserved.map(n => {
+      const d = data[n];
+      return '<div class="acard">' +
+        '<div class="acard-num" style="color:var(--yellow)">#' + pad(n) + ' 🟡</div>' +
+        '<div class="acard-info"><b>' + esc2(d.name||'—') + '</b><br>📱 ' + esc2(d.phone||'—') + '</div>' +
+        '<div class="acard-actions">' +
+        '<button class="abtn green" onclick="window.RIFA.action(' + n + ',\'sold\')">✓ Aprovar</button>' +
+        '<button class="abtn yellow" onclick="window.RIFA.action(' + n + ',\'available\')">↩ Liberar</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  // Vendidos
+  const sDiv = document.getElementById('listSold');
+  if (!sold.length) {
+    sDiv.innerHTML = '<div class="empty">Nenhum número vendido</div>';
+  } else {
+    sDiv.innerHTML = sold.map(n => {
+      const d = data[n];
+      const winBadge = d.winner ? '<span style="color:var(--orange);margin-left:8px">🏆 GANHADOR</span>' : '';
+      return '<div class="acard">' +
+        '<div class="acard-num" style="color:var(--green)">#' + pad(n) + ' ✓' + winBadge + '</div>' +
+        '<div class="acard-info"><b>' + esc2(d.name||'—') + '</b><br>📱 ' + esc2(d.phone||'—') + '</div>' +
+        '<div class="acard-actions">' +
+        '<button class="abtn red" onclick="window.RIFA.action(' + n + ',\'available\')">↩ Estornar</button>' +
+        '</div></div>';
+    }).join('');
+  }
+}
+
+function renderDrawTab() {
+  let soldCount = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    if (data[i] && data[i].st === 'sold') soldCount++;
+  }
+  document.getElementById('drawWarning').style.display = soldCount === 0 ? 'block' : 'none';
+
+  const histDiv = document.getElementById('drawHistory');
+  if (!drawHistory.length) {
+    histDiv.innerHTML = '<div class="empty">Nenhum sorteio realizado ainda</div>';
+  } else {
+    histDiv.innerHTML = drawHistory.map(d =>
+      '<div class="history-item">' +
+      '<div><span class="history-number">#' + pad(d.number) + '</span>' +
+      '<div class="history-date">' + d.date + '</div></div>' +
+      '<div style="text-align:right">' +
+      '<div style="font-size:12px;color:var(--pink)">' + esc2(d.winnerName||'---') + '</div>' +
+      '<div style="font-size:10px;color:var(--textMuted)">🏆 GANHADOR</div></div>' +
+      '</div>'
+    ).join('');
+  }
+}
+
+// ============================================================
+// LOGIN ADMIN
+// ============================================================
+function showLogin() {
+  document.getElementById('passInput').value = '';
+  document.getElementById('loginErr').textContent = '';
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('passInput').focus(), 100);
+}
+
+function hideLogin() {
+  document.getElementById('loginOverlay').classList.add('hidden');
+}
+
+function doLogin() {
+  const v = document.getElementById('passInput').value;
+  if (v === PASS) {
+    adminOk = true;
+    hideLogin();
+    openAdmin();
+    toast('Login realizado com sucesso!', 'success');
+  } else {
+    document.getElementById('loginErr').textContent = '❌ Senha incorreta. Tente novamente.';
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+  }
+}
+
+function checkAdminAccess() {
+  clickCount++;
+  clearTimeout(clickTimer);
+  if (clickCount >= 3) {
+    clickCount = 0;
+    showLogin();
+  } else {
+    clickTimer = setTimeout(() => { clickCount = 0; }, 800);
+  }
+}
+
+function openAdmin() {
+  if (!adminOk) { showLogin(); return; }
+  renderAdmin();
+  renderDrawTab();
+  document.getElementById('adminPanel').classList.remove('hidden');
+  document.getElementById('sideOverlay').classList.remove('hidden');
+}
+
+function closeAdmin() {
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('sideOverlay').classList.add('hidden');
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.getElementById('secretFooter').addEventListener('click', checkAdminAccess);
+document.getElementById('btnLogin').addEventListener('click', doLogin);
+document.getElementById('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('btnLoginCancel').addEventListener('click', hideLogin);
+document.getElementById('loginOverlay').addEventListener('click', function(e) { if (e.target === this) hideLogin(); });
+document.getElementById('btnClosePanel').addEventListener('click', closeAdmin);
+document.getElementById('sideOverlay').addEventListener('click', closeAdmin);
+document.getElementById('btnLogout').addEventListener('click', () => { adminOk = false; closeAdmin(); toast('Sessão encerrada', 'info'); });
+document.getElementById('btnClear').addEventListener('click', () => { if (selected.length) { selected = []; renderGrid(); toast('Seleção limpa!', 'info'); } });
+document.getElementById('btnWa').addEventListener('click', openModal);
+document.getElementById('btnModalCancel').addEventListener('click', closeModal);
+document.getElementById('confirmOverlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+document.getElementById('btnModalConfirm').addEventListener('click', doConfirm);
+document.getElementById('btnDraw').addEventListener('click', () => window.RIFA.realizarSorteio());
+
+document.querySelectorAll('.admin-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const t = this.dataset.tab;
+    document.querySelectorAll('.admin-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    document.getElementById('tab-' + t).classList.add('active');
+    if (t === 'draw') renderDrawTab();
+  });
+});
+
+// ============================================================
+// INICIAR
+// ============================================================
+loadFromSupabase();
 </script>
 </body>
 </html>
