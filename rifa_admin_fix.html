@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22223a;
+  --green:#00e676;--green2:#00c853;--greenDim:#00e67618;
+  --yellow:#ffd740;--yellowDim:#ffd74018;
+  --red:#ff5252;--redDim:#ff525218;
+  --blue:#448aff;--blueDim:#448aff18;
+  --purple:#e040fb;--purpleDim:#e040fb18;
+  --orange:#ff9800;--orangeDim:#ff980018;
+  --pink:#ff69b4;--pinkDim:#ff69b418;
+  --text:#f0f0ff;--textMuted:#8888aa;
+  --border:#ffffff12;--border2:#ffffff22;
+  --card:#ffffff07;
+  --radius:12px;--radius2:8px;
+}
+
+@media (max-width: 768px) {
+  .cart-inner {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .cart-total {
+    text-align: left !important;
+    margin-top: 8px;
+  }
+  .btn-wa, .btn-clear {
+    width: 100%;
+  }
+  .admin-panel {
+    width: 100% !important;
+  }
+  .bcard-actions {
+    flex-direction: column;
+  }
+  .btn-wa-sm {
+    justify-content: center;
+  }
+}
+
+body{background:linear-gradient(135deg, #0a0a0f 0%, #1a0a1a 100%);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb1{width:400px;height:400px;background:rgba(255,105,180,0.1);top:-100px;left:-100px}
+.orb2{width:300px;height:300px;background:rgba(0,230,118,0.07);bottom:-50px;right:-50px}
+.orb3{width:350px;height:350px;background:rgba(255,105,180,0.08);top:50%;left:50%;transform:translate(-50%,-50%)}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 16px 160px}
+
+header{padding:24px 0 28px;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--pinkDim);border:1px solid var(--pink);color:var(--pink);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:20px;margin-bottom:14px}
+.badge .dot{width:6px;height:6px;background:var(--pink);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+h1{font-family:'Syne',sans-serif;font-size:clamp(26px,5vw,50px);font-weight:800;line-height:1.1;margin-bottom:6px;background:linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{color:var(--textMuted);font-size:15px;margin-bottom:22px}
+
+.stats-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:11px 18px;text-align:center;min-width:100px}
+.stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:2px}
+.stat-lbl{font-size:11px;color:var(--textMuted);text-transform:uppercase;letter-spacing:.06em}
+.stat.green .stat-val{color:var(--green)}
+.stat.yellow .stat-val{color:var(--yellow)}
+.stat.red .stat-val{color:var(--red)}
+
+.progress-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.progress-title{font-size:13px;color:var(--textMuted);font-weight:500}
+.progress-pct{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--pink)}
+.progress-bar{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--pink),#ff1493);transition:width .6s ease}
+
+.recent{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.recent-lbl{font-size:12px;color:var(--textMuted);white-space:nowrap}
+.recent-nums{display:flex;gap:6px;flex-wrap:wrap}
+.recent-tag{background:var(--redDim);border:1px solid var(--red);color:var(--red);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px;padding:11px 15px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius2)}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--textMuted)}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+.ld-green{background:var(--green)}.ld-yellow{background:var(--yellow)}.ld-red{background:var(--red)}.ld-blue{background:var(--blue)}.ld-orange{background:var(--orange)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:7px;margin-bottom:20px}
+.ticket{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:var(--radius2);border:1.5px solid var(--border);font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;background:var(--card);color:var(--textMuted);user-select:none}
+.ticket.available{border-color:var(--green);color:var(--green);background:var(--greenDim)}
+.ticket.available:hover{background:var(--green);color:#0a0a0f;transform:scale(1.08);box-shadow:0 0 18px #00e67640}
+.ticket.selected{border-color:var(--blue);color:#fff;background:var(--blue);transform:scale(1.05)}
+.ticket.reserved{border-color:var(--yellow);color:var(--yellow);background:var(--yellowDim);cursor:not-allowed;opacity:0.8}
+.ticket.sold{border-color:var(--red);color:var(--red);background:var(--redDim);cursor:not-allowed;opacity:0.8}
+.ticket.winner{animation:winnerPulse 0.5s ease-in-out 3; border-color:var(--orange); background:var(--orange); color:#fff; box-shadow:0 0 20px var(--orange);}
+@keyframes winnerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+
+.cart{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;z-index:100;background:linear-gradient(180deg,transparent,var(--bg) 25%)}
+.cart.hidden{display:none}
+.cart-inner{max-width:1100px;margin:0 auto;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:14px 18px;box-shadow:0 -16px 50px rgba(0,0,0,.5);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cart-nums{flex:1;min-width:180px}
+.cart-label{font-size:11px;color:var(--textMuted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.cart-tags{display:flex;gap:5px;flex-wrap:wrap}
+.cart-tag{background:var(--blueDim);border:1px solid var(--blue);color:var(--blue);font-size:12px;font-weight:700;padding:4px 9px;border-radius:20px;cursor:pointer;transition:all .15s;font-family:'Syne',sans-serif}
+.cart-tag:hover{background:var(--red);border-color:var(--red);color:#fff;transform:scale(1.05)}
+.cart-empty{color:var(--textMuted);font-size:13px;font-style:italic}
+.cart-total{text-align:right}
+.total-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--pink);line-height:1}
+.total-lbl{font-size:11px;color:var(--textMuted);margin-top:2px}
+.btn-wa{display:flex;align-items:center;gap:9px;background:linear-gradient(135deg,#25D366,#128C7E);border:none;color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;padding:13px 22px;border-radius:var(--radius);cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-wa:hover{transform:scale(1.03);box-shadow:0 8px 28px #25D36640}
+.btn-wa:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-clear{background:transparent;border:1px solid var(--border2);color:var(--textMuted);font-size:12px;padding:7px 13px;border-radius:var(--radius2);cursor:pointer;transition:all .15s}
+.btn-clear:hover{border-color:var(--red);color:var(--red);transform:scale(1.02)}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px}
+.overlay.hidden{display:none}
+.login-box{background:var(--bg2);border:1px solid var(--border2);border-top:2px solid var(--pink);border-radius:var(--radius);padding:32px 28px;max-width:340px;width:100%;animation:modalSlide 0.3s ease}
+@keyframes modalSlide{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+.login-icon{font-size:32px;text-align:center;margin-bottom:12px}
+.login-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--pink);text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--textMuted);text-align:center;margin-bottom:22px}
+.f-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:12px 14px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px}
+.f-input:focus{border-color:var(--pink);box-shadow:0 0 0 2px #ff69b422}
+.f-input::placeholder{color:var(--textMuted)}
+.login-err{color:var(--red);font-size:12px;margin-bottom:10px;min-height:18px;text-align:center;font-weight:500}
+.btn-purple{width:100%;background:linear-gradient(135deg,var(--pink),#ff1493);border:none;border-radius:var(--radius2);padding:13px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;letter-spacing:.03em}
+.btn-purple:hover{filter:brightness(1.1);box-shadow:0 6px 22px #ff69b444}
+.btn-ghost{width:100%;margin-top:8px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius2);padding:10px;color:var(--textMuted);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--red);color:var(--red)}
+
+.side-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299}
+.side-overlay.hidden{display:none}
+.admin-panel{position:fixed;top:0;right:0;width:min(420px,100vw);height:100vh;background:var(--bg2);border-left:1px solid var(--border2);z-index:300;overflow-y:auto;display:flex;flex-direction:column;animation:slideInRight 0.3s ease}
+@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.admin-panel.hidden{display:none}
+.admin-head{background:var(--bg3);border-bottom:1px solid var(--border2);padding:16px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;flex-shrink:0}
+.admin-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--pink)}
+.head-btns{display:flex;gap:8px;align-items:center}
+.btn-logout{background:var(--redDim);border:1px solid var(--red);color:var(--red);font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.btn-logout:hover{background:var(--red);color:#fff}
+.btn-close-panel{background:none;border:none;color:var(--textMuted);font-size:22px;cursor:pointer;line-height:1;padding:2px 6px;transition:color .15s}
+.btn-close-panel:hover{color:var(--red)}
+
+.admin-tabs{display:flex;border-bottom:1px solid var(--border2);background:var(--bg2);flex-shrink:0}
+.admin-tab{flex:1;padding:11px 6px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:var(--textMuted);border-bottom:2px solid transparent;transition:all .15s;font-family:'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.admin-tab.active{color:var(--pink);border-bottom-color:var(--pink);background:#ff69b408}
+.admin-tab:hover:not(.active){color:var(--text)}
+
+.admin-body{padding:16px;flex:1;overflow-y:auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.section-title{font-size:11px;color:var(--textMuted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;font-weight:600;display:flex;align-items:center;gap:6px}
+.badge-count{background:var(--bg4);border:1px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px;color:var(--textMuted)}
+.acard{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:12px;margin-bottom:8px;transition:all .2s}
+.acard:hover{transform:translateX(-4px);border-color:var(--pink)}
+.acard-num{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.acard-info{font-size:12px;color:var(--textMuted);margin-bottom:9px;line-height:1.6}
+.acard-info b{color:var(--text);font-weight:500}
+.acard-actions{display:flex;gap:6px;flex-wrap:wrap}
+.abtn{font-size:11px;padding:5px 10px;border-radius:6px;border:1px solid;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s}
+.abtn.green{border-color:var(--green);color:var(--green);background:var(--greenDim)}
+.abtn.green:hover{background:var(--green);color:#0a0a0f}
+.abtn.yellow{border-color:var(--yellow);color:var(--yellow);background:var(--yellowDim)}
+.abtn.yellow:hover{background:var(--yellow);color:#0a0a0f}
+.abtn.red{border-color:var(--red);color:var(--red);background:var(--redDim)}
+.abtn.red:hover{background:var(--red);color:#fff}
+.abtn.orange{border-color:var(--orange);color:var(--orange);background:var(--orangeDim)}
+.abtn.orange:hover{background:var(--orange);color:#0a0a0f}
+.empty{color:var(--textMuted);font-size:13px;text-align:center;padding:28px;font-style:italic}
+
+.bcard{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:14px;margin-bottom:10px;transition:all .2s}
+.bcard:hover{transform:translateX(-4px);border-color:var(--pink)}
+.bcard-name{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:3px}
+.bcard-phone{font-size:12px;color:var(--textMuted);margin-bottom:9px}
+.bcard-nums{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.bnum{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px}
+.bnum.reserved{background:var(--yellowDim);border:1px solid var(--yellow);color:var(--yellow)}
+.bnum.sold{background:var(--greenDim);border:1px solid var(--green);color:var(--green)}
+.bnum.winner{background:var(--orange);border:1px solid var(--orange);color:#fff}
+.bcard-total{font-size:12px;color:var(--textMuted);margin-bottom:9px}
+.bcard-total b{color:var(--pink)}
+.bcard-actions{display:flex;gap:6px;flex-wrap:wrap;padding-top:9px;border-top:1px solid var(--border)}
+.btn-wa-sm{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,#25D366,#128C7E);border:none;color:#fff;font-size:11px;font-weight:600;padding:6px 11px;border-radius:6px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.btn-wa-sm:hover{box-shadow:0 4px 14px #25D36640;transform:scale(1.02)}
+
+.draw-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.draw-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--orange);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.draw-result{background:var(--bg4);border-radius:var(--radius2);padding:20px;text-align:center;margin-bottom:16px}
+.draw-number{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;color:var(--orange);letter-spacing:4px}
+.draw-info{font-size:12px;color:var(--textMuted);margin-top:8px}
+.draw-history{max-height:300px;overflow-y:auto}
+.history-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.history-number{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--orange)}
+.history-date{font-size:10px;color:var(--textMuted)}
+.btn-draw{background:linear-gradient(135deg,var(--orange),#f57c00);border:none;border-radius:var(--radius2);padding:14px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:16px;cursor:pointer;transition:all .2s;width:100%}
+.btn-draw:hover{transform:scale(1.02);box-shadow:0 6px 22px var(--orangeDim)}
+.btn-draw:disabled{opacity:0.5;cursor:not-allowed}
+.draw-warning{background:var(--orangeDim);border:1px solid var(--orange);border-radius:var(--radius2);padding:12px;margin-bottom:16px;font-size:13px;color:var(--orange)}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:400;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:26px;max-width:400px;width:100%;animation:modalSlide 0.3s ease}
+.modal h2{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;margin-bottom:5px}
+.modal p{color:var(--textMuted);font-size:13px;margin-bottom:16px;line-height:1.5}
+.modal-nums{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.modal-total{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;color:var(--pink);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--textMuted);margin-bottom:18px}
+.modal-form{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.m-input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius2);padding:11px 14px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.m-input:focus{border-color:var(--pink)}
+.m-input::placeholder{color:var(--textMuted)}
+.modal-actions{display:flex;gap:10px}
+.btn-cancel{flex:1;background:transparent;border:1px solid var(--border2);border-radius:var(--radius2);padding:12px;color:var(--textMuted);cursor:pointer;font-family:'Syne',sans-serif;font-weight:600;transition:all .15s}
+.btn-cancel:hover{border-color:var(--red);color:var(--red)}
+.btn-confirm{flex:2;background:linear-gradient(135deg,#25D366,#128C7E);border:none;border-radius:var(--radius2);padding:12px;color:#fff;cursor:pointer;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-confirm:hover{box-shadow:0 6px 22px #25D36640;transform:scale(1.02)}
+
+.secret-footer{text-align:center;padding:24px 0 10px;font-size:12px;color:#ffffff30;cursor:pointer;user-select:none;transition:all .3s;font-weight:500;letter-spacing:1px}
+.secret-footer:hover{color:#ff69b4;text-shadow:0 0 10px #ff69b4}
+
+.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:11px 20px;font-size:13px;z-index:700;opacity:0;pointer-events:none;transition:all .25s;white-space:nowrap;font-weight:500}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.info{border-color:var(--pink);color:var(--pink)}
+.toast.warning{border-color:var(--orange);color:var(--orange)}
+
+.loading{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg3);padding:20px;border-radius:var(--radius);border:1px solid var(--border2);z-index:1000;display:none}
+.loading.show{display:flex;align-items:center;gap:10px}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--pink);border-radius:50%;animation:spin 0.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:480px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+  .ticket{font-size:12px}
+  .btn-wa{padding:12px 14px;font-size:13px}
+  .total-val{font-size:21px}
+  .secret-footer{font-size:10px}
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="loading" id="loading"><div class="spinner"></div><span>Processando...</span></div>
+
+<div class="app">
+  <header>
+    <div class="badge"><span class="dot"></span>💝 Edição Especial 2026</div>
+    <h1>💕 RIFA DIA DOS NAMORADOS 2026 💕</h1>
+    <p class="subtitle">Cada número por apenas <strong style="color:var(--pink)">R$15,00</strong> · Sorteio especial 2026 · <strong>100 números disponíveis</strong></p>
+    <div class="stats-bar">
+      <div class="stat green"><div class="stat-val" id="sAvail">—</div><div class="stat-lbl">Disponíveis</div></div>
+      <div class="stat yellow"><div class="stat-val" id="sRes">—</div><div class="stat-lbl">Reservados</div></div>
+      <div class="stat red"><div class="stat-val" id="sSold">—</div><div class="stat-lbl">Vendidos</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--text)">100</div><div class="stat-lbl">Total</div></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-title">🎯 Progresso das vendas</span>
+        <span class="progress-pct" id="pPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="pFill" style="width:0%"></div></div>
+    </div>
+    <div class="recent hidden" id="recentWrap" style="display:none">
+      <span class="recent-lbl">🔥 Últimos vendidos:</span>
+      <div class="recent-nums" id="recentNums"></div>
+    </div>
+  </header>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot ld-green"></div>Disponível</div>
+    <div class="legend-item"><div class="legend-dot ld-blue"></div>Selecionado</div>
+    <div class="legend-item"><div class="legend-dot ld-yellow"></div>Reservado</div>
+    <div class="legend-item"><div class="legend-dot ld-red"></div>Vendido</div>
+    <div class="legend-item"><div class="legend-dot ld-orange"></div>Ganhador</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  
+  <div class="secret-footer" id="secretFooter">💝 RIFA DIA DOS NAMORADOS 2026 💝</div>
+</div>
+
+<div class="cart">
+  <div class="cart-inner">
+    <div class="cart-nums">
+      <div class="cart-label">💕 Selecionados <span id="cartCount" style="color:var(--pink);font-weight:700"></span></div>
+      <div class="cart-tags" id="cartTags"><span class="cart-empty">✨ Clique nos números verdes ✨</span></div>
+    </div>
+    <div class="cart-total">
+      <div class="total-val" id="cartTotal">R$0</div>
+      <div class="total-lbl">Total</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn-wa" id="btnWa" disabled>
+        <svg style="width:18px;height:18px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Confirmar no WhatsApp
+      </button>
+      <button class="btn-clear" id="btnClear">🗑️ Limpar seleção</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-icon">💝</div>
+    <div class="login-title">Acesso Administrativo</div>
+    <div class="login-sub">Digite a senha para acessar o painel</div>
+    <input class="f-input" id="passInput" type="password" placeholder="Digite a senha" autocomplete="off" />
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn-purple" id="btnLogin">Entrar no painel</button>
+    <button class="btn-ghost" id="btnLoginCancel">Cancelar</button>
+  </div>
+</div>
+
+<div class="side-overlay hidden" id="sideOverlay"></div>
+<div class="admin-panel hidden" id="adminPanel">
+  <div class="admin-head">
+    <div class="admin-title">⚙️ Painel Administrativo</div>
+    <div class="head-btns">
+      <button class="btn-logout" id="btnLogout">Sair</button>
+      <button class="btn-close-panel" id="btnClosePanel">✕</button>
+    </div>
+  </div>
+  <div class="admin-tabs">
+    <div class="admin-tab active" data-tab="buyers">👥 Compradores</div>
+    <div class="admin-tab" data-tab="reserved">🟡 Reservados</div>
+    <div class="admin-tab" data-tab="sold">🔴 Vendidos</div>
+    <div class="admin-tab" data-tab="draw">🎲 SORTEIO 2026</div>
+  </div>
+  <div class="admin-body">
+    <div class="tab-panel active" id="tab-buyers">
+      <div class="section-title">Compradores <span class="badge-count" id="cntBuyers">0</span></div>
+      <div id="listBuyers"><div class="empty">Nenhum comprador ainda</div></div>
+    </div>
+    <div class="tab-panel" id="tab-reserved">
+      <div class="section-title">Aguardando pagamento <span class="badge-count" id="cntReserved">0</span></div>
+      <div id="listReserved"><div class="empty">Nenhum número reservado</div></div>
+    </div>
+    <div class="tab-panel" id="tab-sold">
+      <div class="section-title">Pagos e confirmados <span class="badge-count" id="cntSold">0</span></div>
+      <div id="listSold"><div class="empty">Nenhum número vendido</div></div>
+    </div>
+    <div class="tab-panel" id="tab-draw">
+      <div class="section-title">🎲 SISTEMA DE SORTEIO - EDIÇÃO 2026</div>
+      <div class="draw-box">
+        <div class="draw-title"><span>🎯</span> Realizar Sorteio 2026</div>
+        <div id="drawWarning" class="draw-warning" style="display:none">⚠️ Ainda não há números vendidos suficientes para realizar o sorteio!</div>
+        <div class="draw-result" id="drawResult" style="display:none">
+          <div class="draw-number" id="drawNumber">---</div>
+          <div class="draw-info" id="drawInfo">Aguardando sorteio 2026</div>
+        </div>
+        <button class="btn-draw" id="btnDraw" onclick="window.RIFA.realizarSorteio()">🎲 REALIZAR SORTEIO 2026</button>
+      </div>
+      <div class="section-title" style="margin-top:20px">📜 Histórico de Sorteios 2026</div>
+      <div id="drawHistory" class="draw-history"><div class="empty">Nenhum sorteio realizado ainda em 2026</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="confirmOverlay">
+  <div class="modal">
+    <h2>📋 Confirmar Reserva</h2>
+    <p>Preencha seus dados abaixo. Você será direcionado ao WhatsApp para finalizar o pagamento da Rifa 2026.</p>
+    <div class="modal-nums" id="mNums"></div>
+    <div class="modal-total" id="mTotal"></div>
+    <div class="modal-sub" id="mSub"></div>
+    <div class="modal-form">
+      <input class="m-input" id="mName" type="text" placeholder="Seu nome completo *" />
+      <input class="m-input" id="mPhone" type="tel" placeholder="Seu WhatsApp (ex: 558898540618) *" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btnModalCancel">Cancelar</button>
+      <button class="btn-confirm" id="btnModalConfirm">
+        <svg style="width:16px;height:16px;fill:#fff;flex-shrink:0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar no WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  var TOTAL=100, PRICE=15, WA='558898540618';
+  var KEY='rifa_namorados_2026_v2', PASS='071022';
+  var data={}, selected=[], adminOk=false;
+  var drawHistory = [];
+  var clickCount = 0;
+  var clickTimer = null;
+
+  function loadDrawHistory(){
+    try{
+      var h = localStorage.getItem(KEY+'_draws');
+      if(h) drawHistory = JSON.parse(h);
+    }catch(e){}
+  }
+  function saveDrawHistory(){
+    localStorage.setItem(KEY+'_draws', JSON.stringify(drawHistory));
+  }
+  function showLoading(){ document.getElementById('loading').classList.add('show'); }
+  function hideLoading(){ document.getElementById('loading').classList.remove('show'); }
+  function loadData(){
+    try{
+      var s=localStorage.getItem(KEY);
+      if(s){ data=JSON.parse(s); return; }
+    }catch(e){}
+    data={};
+    for(var i=1;i<=TOTAL;i++) data[i]={st:'available',name:'',phone:'',ts:0,winner:false};
+    save();
+  }
+  function save(){
+    try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}
+  }
+  function toast(msg,type){
+    var el=document.getElementById('toast');
+    el.textContent=msg;
+    el.className='toast '+type+' show';
+    setTimeout(function(){el.className='toast';},2800);
+  }
+  function isAvailable(n){ return data[n] && data[n].st === 'available'; }
+
+  function checkAdminAccess() {
+    clickCount++;
+    clearTimeout(clickTimer);
+    if(clickCount >= 3) { clickCount = 0; showLogin(); }
+    else { clickTimer = setTimeout(function(){ clickCount = 0; }, 800); }
+  }
+
+  window.RIFA = window.RIFA || {};
+  window.RIFA.realizarSorteio = function(){
+    if(!adminOk){ toast('Acesso negado! Apenas administradores podem realizar sorteios.','error'); return; }
+    var soldNumbers = [];
+    for(var i=1;i<=TOTAL;i++){ if(data[i].st === 'sold' && !data[i].winner){ soldNumbers.push(i); } }
+    if(soldNumbers.length === 0){ toast('Não há números vendidos disponíveis para sorteio!','warning'); document.getElementById('drawWarning').style.display = 'block'; return; }
+    showLoading();
+    setTimeout(function(){
+      var randomIndex = Math.floor(Math.random() * soldNumbers.length);
+      var winnerNumber = soldNumbers[randomIndex];
+      data[winnerNumber].winner = true;
+      data[winnerNumber].winnerDate = Date.now();
+      var drawRecord = { number: winnerNumber, date: new Date().toLocaleString('pt-BR'), timestamp: Date.now(), winnerName: data[winnerNumber].name, winnerPhone: data[winnerNumber].phone };
+      drawHistory.unshift(drawRecord);
+      if(drawHistory.length > 20) drawHistory.pop();
+      saveDrawHistory();
+      save();
+      document.getElementById('drawResult').style.display = 'block';
+      document.getElementById('drawNumber').textContent = pad(winnerNumber);
+      document.getElementById('drawInfo').innerHTML = '🎉 NÚMERO SORTEADO RIFA 2026! 🎉<br>Ganhador: ' + (data[winnerNumber].name || '---') + '<br>📱 ' + (data[winnerNumber].phone || '---');
+      renderGrid();
+      renderAdmin();
+      toast('🎉 NÚMERO SORTEADO 2026: ' + pad(winnerNumber) + '! Parabéns ao ganhador! 🎉', 'success');
+      if(data[winnerNumber].phone){
+        var msg = encodeURIComponent('🎉 PARABÉNS! 🎉\n\nVocê foi o GANHADOR da RIFA DIA DOS NAMORADOS 2026!\nNúmero sorteado: ' + pad(winnerNumber) + '\n\nEntre em contato conosco para resgatar seu prêmio! 🏆💝');
+        setTimeout(function(){
+          if(confirm('Deseja enviar mensagem para o ganhador no WhatsApp?')){ window.open('https://wa.me/55'+data[winnerNumber].phone.replace(/\D/g,'')+'?text='+msg,'_blank'); }
+        }, 500);
+      }
+      hideLoading();
+    }, 1000);
+  };
+  
+  window.RIFA.action = function(n,st){
+    if(st==='available' && data[n].st==='sold'){
+      if(confirm('Estornar este número? Ele ficará disponível novamente.')){ data[n].st=st; data[n].name=''; data[n].phone=''; data[n].ts=0; data[n].winner=false; save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' liberado!','success'); }
+    } else if(st==='sold' && data[n].st==='reserved'){ data[n].st=st; data[n].ts=Date.now(); save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' aprovado!','success'); }
+    else if(st==='available' && data[n].st==='reserved'){ data[n].st=st; data[n].name=''; data[n].phone=''; data[n].ts=0; data[n].winner=false; save(); renderGrid(); renderAdmin(); toast('✓ Número #'+pad(n)+' liberado!','success'); }
+  };
+  
+  window.RIFA.approveAll = function(name,phone){
+    var count=0;
+    for(var i=1;i<=TOTAL;i++){ if(data[i].name===name && data[i].phone===phone && data[i].st==='reserved'){ data[i].st='sold'; data[i].ts=Date.now(); count++; } }
+    if(count>0){ save(); renderGrid(); renderAdmin(); toast('✓ '+count+' números de '+name+' aprovados!','success'); }
+  };
+
+  function showLogin(){
+    document.getElementById('passInput').value='';
+    document.getElementById('loginErr').textContent='';
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    setTimeout(function(){ document.getElementById('passInput').focus(); },100);
+  }
+  function hideLogin(){ document.getElementById('loginOverlay').classList.add('hidden'); }
+  function doLogin(){
+    var v=document.getElementById('passInput').value;
+    if(v===PASS){ adminOk=true; hideLogin(); openAdmin(); toast('Login realizado com sucesso!','success'); }
+    else { document.getElementById('loginErr').textContent='❌ Senha incorreta. Tente novamente.'; document.getElementById('passInput').value=''; document.getElementById('passInput').focus(); }
+  }
+
+  document.getElementById('secretFooter').addEventListener('click', checkAdminAccess);
+  document.getElementById('btnLogin').addEventListener('click',doLogin);
+  document.getElementById('passInput').addEventListener('keydown',function(e){ if(e.key==='Enter') doLogin(); });
+  document.getElementById('btnLoginCancel').addEventListener('click',hideLogin);
+  document.getElementById('loginOverlay').addEventListener('click',function(e){ if(e.target===this) hideLogin(); });
+
+  function openAdmin(){ if(!adminOk){ showLogin(); return; } renderAdmin(); renderDrawTab(); document.getElementById('adminPanel').classList.remove('hidden'); document.getElementById('sideOverlay').classList.remove('hidden'); }
+  function closeAdmin(){ document.getElementById('adminPanel').classList.add('hidden'); document.getElementById('sideOverlay').classList.add('hidden'); }
+  function renderDrawTab(){
+    var soldCount = 0;
+    for(var i=1;i<=TOTAL;i++){ if(data[i].st === 'sold') soldCount++; }
+    document.getElementById('drawWarning').style.display = soldCount === 0 ? 'block' : 'none';
+    var historyDiv = document.getElementById('drawHistory');
+    if(drawHistory.length === 0){ historyDiv.innerHTML = '<div class="empty">Nenhum sorteio realizado ainda em 2026</div>'; }
+    else { historyDiv.innerHTML = drawHistory.map(function(d){ return '<div class="history-item"><div><span class="history-number">#' + pad(d.number) + '</span><div class="history-date">' + d.date + '</div></div><div style="text-align:right"><div style="font-size:12px;color:var(--pink)">' + (d.winnerName || '---') + '</div><div style="font-size:10px;color:var(--textMuted)">🏆 GANHADOR 2026</div></div></div>'; }).join(''); }
+  }
+  
+  document.getElementById('btnClosePanel').addEventListener('click',closeAdmin);
+  document.getElementById('sideOverlay').addEventListener('click',closeAdmin);
+  document.getElementById('btnLogout').addEventListener('click',function(){ adminOk=false; closeAdmin(); toast('Sessão encerrada','info'); });
+  document.querySelectorAll('.admin-tab').forEach(function(tab){
+    tab.addEventListener('click',function(){
+      var t=this.dataset.tab;
+      document.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(x){x.classList.remove('active');});
+      this.classList.add('active');
+      document.getElementById('tab-'+t).classList.add('active');
+      if(t === 'draw') renderDrawTab();
+    });
+  });
+
+  function getBuyers(){
+    var map={};
+    for(var i=1;i<=TOTAL;i++){ var d=data[i]; if(d.st==='available') continue; if(!d.name&&!d.phone) continue; var k=d.name+'||'+d.phone; if(!map[k]) map[k]={name:d.name,phone:d.phone,nums:[]}; map[k].nums.push({n:i,st:d.st,winner:d.winner}); }
+    return Object.values(map);
+  }
+  function waIcon(){ return '<svg style="width:12px;height:12px;fill:#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'; }
+
+  function renderAdmin(){
+    var buyers=getBuyers();
+    var reserved=[], sold=[];
+    for(var i=1;i<=TOTAL;i++){ if(data[i].st==='reserved') reserved.push(i); if(data[i].st==='sold') sold.push(i); }
+    document.getElementById('cntBuyers').textContent=buyers.length;
+    document.getElementById('cntReserved').textContent=reserved.length;
+    document.getElementById('cntSold').textContent=sold.length;
+    var bDiv=document.getElementById('listBuyers');
+    if(!buyers.length){ bDiv.innerHTML='<div class="empty">Nenhum comprador ainda</div>'; }
+    else {
+      bDiv.innerHTML=buyers.map(function(b){
+        var total=b.nums.length*PRICE;
+        var resNums=b.nums.filter(function(x){return x.st==='reserved';});
+        var numsHtml=b.nums.map(function(x){ return '<span class="bnum '+ (x.winner ? 'winner' : x.st) +'">'+pad(x.n)+ (x.winner ? ' 🏆' : '') +'</span>'; }).join('');
+        var msg=encodeURIComponent('Olá '+b.name+'! Confirmando minha reserva na RIFA DIA DOS NAMORADOS 2026 💝\n\nNúmeros: '+b.nums.map(function(x){return pad(x.n);}).join(', ')+'\nTotal: R$'+total+',00\n\nAguardo confirmação do pagamento para 2026!');
+        var approveBtn=resNums.length>0?('<button class="abtn green" onclick="window.RIFA.approveAll(\''+esc(b.name)+'\',\''+esc(b.phone)+'\')">✓ Aprovar todos ('+resNums.length+')</button>'):'';
+        return '<div class="bcard"><div class="bcard-name">👤 '+esc2(b.name||'—')+'</div><div class="bcard-phone">📱 '+esc2(b.phone||'—')+'</div><div class="bcard-nums">'+numsHtml+'</div><div class="bcard-total">'+b.nums.length+' número(s) · <b>R$'+total.toLocaleString('pt-BR')+',00</b></div><div class="bcard-actions"><button class="btn-wa-sm" onclick="window.open(\'https://wa.me/55'+b.phone.replace(/\D/g,'')+'?text='+msg+'\',\'_blank\')">'+waIcon()+' WhatsApp</button>'+approveBtn+'</div></div>';
+      }).join('');
+    }
+    var rDiv=document.getElementById('listReserved');
+    if(!reserved.length){ rDiv.innerHTML='<div class="empty">Nenhum número reservado</div>'; }
+    else { rDiv.innerHTML=reserved.map(function(n){ var d=data[n]; return '<div class="acard"><div class="acard-num" style="color:var(--yellow)">#'+pad(n)+' 🟡</div><div class="acard-info"><b>'+esc2(d.name||'—')+'</b><br>📱 '+esc2(d.phone||'—')+'</div><div class="acard-actions"><button class="abtn green" onclick="window.RIFA.action('+n+',\'sold\')">✓ Aprovar</button><button class="abtn yellow" onclick="window.RIFA.action('+n+',\'available\')">↩ Liberar</button></div></div>'; }).join(''); }
+    var sDiv=document.getElementById('listSold');
+    if(!sold.length){ sDiv.innerHTML='<div class="empty">Nenhum número vendido</div>'; }
+    else { sDiv.innerHTML=sold.map(function(n){ var d=data[n]; var winnerBadge = d.winner ? '<span style="color:var(--orange);margin-left:8px">🏆 GANHADOR 2026</span>' : ''; return '<div class="acard"><div class="acard-num" style="color:var(--green)">#'+pad(n)+' ✓'+winnerBadge+'</div><div class="acard-info"><b>'+esc2(d.name||'—')+'</b><br>📱 '+esc2(d.phone||'—')+'</div><div class="acard-actions"><button class="abtn red" onclick="window.RIFA.action('+n+',\'available\')">↩ Estornar</button></div></div>'; }).join(''); }
+  }
+
+  function pad(n){ return n<10?'0'+n:''+n; }
+  function esc(s){ return (s||'').replace(/'/g,"\\'"); }
+  function esc2(s){ return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderGrid(){
+    var grid=document.getElementById('grid');
+    grid.innerHTML='';
+    for(var i=1;i<=TOTAL;i++){
+      (function(n){
+        var st=data[n].st;
+        var isSel=selected.indexOf(n)!==-1;
+        var isWinner = data[n].winner;
+        var div=document.createElement('div');
+        div.className='ticket '+(isSel?'selected':st) + (isWinner ? ' winner' : '');
+        div.textContent=pad(n);
+        if(st==='available' || isSel){ div.addEventListener('click',function(){toggleNum(n);}); }
+        grid.appendChild(div);
+      })(i);
+    }
+    updateStats();
+    updateCart();
+  }
+
+  function toggleNum(n){
+    if(!isAvailable(n)) { if(data[n].st==='reserved') toast('Número #'+pad(n)+' já está reservado!','error'); else if(data[n].st==='sold') toast('Número #'+pad(n)+' já foi vendido!','error'); return; }
+    var idx=selected.indexOf(n);
+    if(idx===-1){ if(selected.length<20){ selected.push(n); toast('✓ Número '+pad(n)+' adicionado!','success'); } else { toast('Limite máximo de 20 números por vez','error'); return; } }
+    else { selected.splice(idx,1); }
+    renderGrid();
+  }
+
+  document.getElementById('btnClear').addEventListener('click',function(){ if(selected.length>0){ selected=[]; renderGrid(); toast('Seleção limpa!','info'); } });
+
+  function updateStats(){
+    var avail=0,res=0,sold=0;
+    for(var i=1;i<=TOTAL;i++){ var st=data[i].st; if(st==='available') avail++; else if(st==='reserved') res++; else sold++; }
+    document.getElementById('sAvail').textContent=avail;
+    document.getElementById('sRes').textContent=res;
+    document.getElementById('sSold').textContent=sold;
+    var pct=Math.round(sold/TOTAL*100);
+    document.getElementById('pPct').textContent=pct+'%';
+    document.getElementById('pFill').style.width=pct+'%';
+    var recent=[];
+    for(var i=1;i<=TOTAL;i++){ if(data[i].st==='sold') recent.push({n:i,ts:data[i].ts||0}); }
+    recent.sort(function(a,b){return b.ts-a.ts;});
+    recent=recent.slice(0,6);
+    if(recent.length){ document.getElementById('recentWrap').style.display='flex'; document.getElementById('recentNums').innerHTML=recent.map(function(x){ return '<span class="recent-tag">#'+pad(x.n)+'</span>'; }).join(''); }
+    else { document.getElementById('recentWrap').style.display='none'; }
+  }
+
+  function updateCart(){
+    var cartEl=document.querySelector('.cart');
+    var tags=document.getElementById('cartTags');
+    var total=document.getElementById('cartTotal');
+    var count=document.getElementById('cartCount');
+    var btn=document.getElementById('btnWa');
+    if(!selected.length){ if(cartEl) cartEl.classList.add('hidden'); tags.innerHTML='<span class="cart-empty">✨ Clique nos números verdes ✨</span>'; total.textContent='R$0'; count.textContent=''; btn.disabled=true; return; }
+    if(cartEl) cartEl.classList.remove('hidden');
+    var sorted=selected.slice().sort(function(a,b){return a-b;});
+    tags.innerHTML=sorted.map(function(n){ return '<span class="cart-tag" data-n="'+n+'">'+pad(n)+' ✕</span>'; }).join('');
+    tags.querySelectorAll('.cart-tag').forEach(function(el){ el.addEventListener('click',function(){ toggleNum(parseInt(this.dataset.n)); }); });
+    var t=selected.length*PRICE;
+    total.textContent='R$'+t.toLocaleString('pt-BR')+',00';
+    count.textContent='('+selected.length+')';
+    btn.disabled=false;
+  }
+
+  document.getElementById('btnWa').addEventListener('click',openModal);
+  document.getElementById('btnModalCancel').addEventListener('click',closeModal);
+  document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  document.getElementById('btnModalConfirm').addEventListener('click',doConfirm);
+
+  function openModal(){
+    if(!selected.length) return;
+    var sorted=selected.slice().sort(function(a,b){return a-b;});
+    var total=selected.length*PRICE;
+    document.getElementById('mNums').innerHTML=sorted.map(function(n){ return '<span class="cart-tag">#'+pad(n)+'</span>'; }).join('');
+    document.getElementById('mTotal').textContent='R$'+total.toLocaleString('pt-BR')+',00';
+    document.getElementById('mSub').textContent=selected.length+' número'+(selected.length>1?'s':'')+' × R$'+PRICE+',00';
+    document.getElementById('mName').value='';
+    document.getElementById('mPhone').value='';
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+    setTimeout(function(){ document.getElementById('mName').focus(); },100);
+  }
+  function closeModal(){ document.getElementById('confirmOverlay').classList.add('hidden'); }
+  function doConfirm(){
+    var name=document.getElementById('mName').value.trim();
+    var phone=document.getElementById('mPhone').value.trim();
+    if(!name){ toast('❌ Informe seu nome completo','error'); return; }
+    if(!phone){ toast('❌ Informe seu WhatsApp','error'); return; }
+    var unavailable = [];
+    selected.forEach(function(n){ if(!isAvailable(n)) unavailable.push(n); });
+    if(unavailable.length > 0){ toast('⚠️ Números '+unavailable.map(pad).join(', ')+' não estão mais disponíveis!','error'); selected = selected.filter(function(n){ return isAvailable(n); }); if(selected.length === 0){ closeModal(); renderGrid(); return; } var stillAvailable = selected.slice().sort(function(a,b){return a-b;}); var newTotal = stillAvailable.length * PRICE; document.getElementById('mNums').innerHTML=stillAvailable.map(function(n){ return '<span class="cart-tag">#'+pad(n)+'</span>'; }).join(''); document.getElementById('mTotal').textContent='R$'+newTotal.toLocaleString('pt-BR')+',00'; document.getElementById('mSub').textContent=stillAvailable.length+' número'+(stillAvailable.length>1?'s':'')+' × R$'+PRICE+',00'; toast('⚠️ Alguns números foram removidos da seleção','info'); return; }
+    var sorted=selected.slice().sort(function(a,b){return a-b;});
+    var total=selected.length*PRICE;
+    var numsStr=sorted.map(pad).join(', ');
+    showLoading();
+    setTimeout(function(){
+      sorted.forEach(function(n){ data[n]={st:'reserved',name:name,phone:phone,ts:Date.now(),winner:false}; });
+      save();
+      var msg=encodeURIComponent('💝 *CONFIRMAÇÃO DE RESERVA - RIFA DIA DOS NAMORADOS 2026* 💝\n\n👤 *Nome:* '+name+'\n📱 *WhatsApp:* '+phone+'\n🎯 *Números:* '+numsStr+'\n💰 *Valor Total:* R$'+total.toLocaleString('pt-BR')+',00\n🎫 *Quantidade:* '+selected.length+' números\n\n✅ *Status:* Aguardando confirmação de pagamento\n\n🔗 *Prêmio:* Rifa Especial Dia dos Namorados 2026');
+      window.open('https://wa.me/'+WA+'?text='+msg,'_blank');
+      selected=[];
+      closeModal();
+      renderGrid();
+      hideLoading();
+      toast('✓ Reserva confirmada! Finalize o pagamento pelo WhatsApp','success');
+    }, 500);
+  }
+
+  loadDrawHistory();
+  loadData();
+  renderGrid();
+})();
+</script>
+</body>
+</html>
